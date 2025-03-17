@@ -1,0 +1,109 @@
+import React, { useState } from 'react';
+import './App.css';
+import Header from './components/Header';
+import CommandeChart from './components/CommandeChart';
+import ObjectifGauge from './components/ObjectifGauge';
+import ConversionGauge from './components/ConversionGauge';
+import WorldMapChart from './components/WorldMapChart';
+
+function App() {
+  const [filters, setFilters] = useState<{
+    annee: number | null;
+    commercial: string | null;
+  }>({
+    annee: null,
+    commercial: null
+  });
+
+  const handleFilterChange = (annee: number | null, commercial: string | null) => {
+    setFilters({ annee, commercial });
+  };
+
+  return (
+    <div className="App" style={appStyle}>
+      <Header onFilterChange={handleFilterChange} />
+      <main style={mainStyle}>
+        <div style={dashboardStyle}>
+          <div style={topRowStyle}>
+            <div style={barChartContainerStyle}>
+              <CommandeChart annee={filters.annee} commercial={filters.commercial} />
+            </div>
+            <div style={gaugesRowStyle}>
+              <div style={gaugeContainerStyle}>
+                <ObjectifGauge annee={filters.annee} commercial={filters.commercial} />
+              </div>
+              <div style={gaugeContainerStyle}>
+                <ConversionGauge annee={filters.annee} commercial={filters.commercial} />
+              </div>
+            </div>
+          </div>
+          <div style={mapContainerStyle}>
+            <WorldMapChart />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// Styles
+const appStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: '100vh',
+  width: '100%'
+};
+
+const mainStyle: React.CSSProperties = {
+  padding: '15px',
+  backgroundColor: '#f5f5f5',
+  flexGrow: 1,
+  overflowY: 'auto'
+};
+
+const dashboardStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '15px'
+};
+
+const topRowStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '15px',
+  alignItems: 'stretch'
+};
+
+const barChartContainerStyle: React.CSSProperties = {
+  gridColumn: '1 / span 1'
+};
+
+const gaugesRowStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '15px',
+  gridColumn: '2 / span 1',
+  alignContent: 'stretch',
+  height: '100%'
+};
+
+const gaugeContainerStyle: React.CSSProperties = {
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  height: 'auto'
+};
+
+const mapContainerStyle: React.CSSProperties = {
+  height: '550px',
+  width: '50%',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  overflow: 'hidden'
+};
+
+export default App; 
