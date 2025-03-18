@@ -5,6 +5,8 @@ import CommandeChart from './components/CommandeChart';
 import ObjectifGauge from './components/ObjectifGauge';
 import ConversionGauge from './components/ConversionGauge';
 import WorldMapChart from './components/WorldMapChart';
+import MonthlyComparisonChart from './components/MonthlyComparisonChart';
+import MotifPieChart from './components/MotifPieChart';
 
 function App() {
   const [filters, setFilters] = useState<{
@@ -37,8 +39,28 @@ function App() {
               </div>
             </div>
           </div>
-          <div style={mapContainerStyle}>
-            <WorldMapChart />
+          <div style={middleRowStyle}>
+            <div style={chartContainerStyle}>
+              <MonthlyComparisonChart 
+                annee={filters.annee ?? undefined} 
+                commercial={filters.commercial ?? undefined} 
+              />
+            </div>
+            <div style={mapContainerStyle}>
+              <WorldMapChart 
+                annee={filters.annee ?? undefined} 
+                commercial={filters.commercial ?? undefined} 
+              />
+            </div>
+          </div>
+          <div style={bottomRowStyle}>
+            <div style={pieChartContainerStyle}>
+              <MotifPieChart 
+                annee={filters.annee ?? undefined} 
+                commercial={filters.commercial ?? undefined} 
+              />
+            </div>
+            <div style={emptySpaceStyle}></div>
           </div>
         </div>
       </main>
@@ -48,23 +70,24 @@ function App() {
 
 // Styles
 const appStyle: React.CSSProperties = {
+  textAlign: 'center',
   display: 'flex',
   flexDirection: 'column',
   minHeight: '100vh',
-  width: '100%'
+  backgroundColor: '#f5f5f5'
 };
 
 const mainStyle: React.CSSProperties = {
-  padding: '15px',
-  backgroundColor: '#f5f5f5',
-  flexGrow: 1,
-  overflowY: 'auto'
+  flex: 1,
+  padding: '20px'
 };
 
 const dashboardStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '15px'
+  gap: '20px',
+  maxWidth: '1600px',
+  margin: '0 auto'
 };
 
 const topRowStyle: React.CSSProperties = {
@@ -75,7 +98,12 @@ const topRowStyle: React.CSSProperties = {
 };
 
 const barChartContainerStyle: React.CSSProperties = {
-  gridColumn: '1 / span 1'
+  gridColumn: '1 / span 1',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  overflow: 'hidden',
+  height: 'auto'
 };
 
 const gaugesRowStyle: React.CSSProperties = {
@@ -88,22 +116,50 @@ const gaugesRowStyle: React.CSSProperties = {
 };
 
 const gaugeContainerStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  overflow: 'hidden',
-  display: 'flex',
-  flexDirection: 'column',
-  height: 'auto'
-};
-
-const mapContainerStyle: React.CSSProperties = {
-  height: '550px',
-  width: '50%',
+  flex: 1,
   backgroundColor: 'white',
   borderRadius: '8px',
   boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
   overflow: 'hidden'
+};
+
+const middleRowStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '15px',
+  alignItems: 'stretch'
+};
+
+const chartContainerStyle: React.CSSProperties = {
+  flex: 1
+};
+
+const mapContainerStyle: React.CSSProperties = {
+  height: '550px',
+  gridColumn: '2 / span 1',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  overflow: 'hidden'
+};
+
+const bottomRowStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 2fr',
+  gap: '15px',
+  alignItems: 'stretch'
+};
+
+const pieChartContainerStyle: React.CSSProperties = {
+  height: '300px',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  overflow: 'hidden'
+};
+
+const emptySpaceStyle: React.CSSProperties = {
+  flex: 1
 };
 
 export default App; 

@@ -282,4 +282,51 @@ export const getCAParMois = async (annee?: number, commercial?: string) => {
     console.error('Erreur lors de la récupération du CA par mois:', error);
     throw error;
   }
+};
+
+/**
+ * Récupère la répartition des motifs de commande par commercial et année
+ */
+export const getMotifRepartition = async (annee?: number, commercial?: string) => {
+  try {
+    const pool = await getConnection();
+    
+    let query = `
+      SELECT 
+        ID,
+        Date_Annee,
+        ID_Commercial,
+        Motif,
+        Nb_Devis
+      FROM [CSID].[dbo].[Taux_Motif]
+      WHERE 1=1
+    `;
+    
+    const params: any[] = [];
+    
+    if (annee) {
+      query += ` AND Date_Annee = @annee`;
+      params.push({ name: 'annee', value: annee });
+    }
+    
+    if (commercial) {
+      query += ` AND ID_Commercial = @commercial`;
+      params.push({ name: 'commercial', value: commercial });
+    }
+    
+    query += ` ORDER BY Nb_Devis DESC`;
+    
+    const request = pool.request();
+    
+    // Ajouter les paramètres à la requête
+    params.forEach(param => {
+      request.input(param.name, param.value);
+    });
+    
+    const result = await request.query(query);
+    return result.recordset;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des motifs de commande:', error);
+    throw error;
+  }
 }; 

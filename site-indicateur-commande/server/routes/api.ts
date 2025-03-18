@@ -1,5 +1,5 @@
 import express from 'express';
-import { getCommandesObjectifs, getCommerciaux, getAnnees, getTauxConversion, getCAParPays, getCAParMois } from '../services/commandeService';
+import { getCommandesObjectifs, getCommerciaux, getAnnees, getTauxConversion, getCAParPays, getCAParMois, getMotifRepartition } from '../services/commandeService';
 
 const router = express.Router();
 
@@ -92,6 +92,20 @@ router.get('/ca-par-mois', async (req, res) => {
   } catch (error) {
     console.error('Erreur lors de la récupération du CA par mois:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération des données' });
+  }
+});
+
+// Route pour obtenir la répartition des motifs de commande
+router.get('/motif-repartition', async (req, res) => {
+  try {
+    const anneeParam = req.query.annee ? parseInt(req.query.annee as string) : undefined;
+    const commercialParam = req.query.commercial as string | undefined;
+    
+    const data = await getMotifRepartition(anneeParam, commercialParam);
+    res.json(data);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des motifs de commande:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

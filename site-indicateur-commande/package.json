@@ -17,6 +17,7 @@
     "axios": "^1.8.3",
     "chart.js": "^4.4.8",
     "chartjs-chart-geo": "^4.3.4",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "country-iso": "^2.0.5",

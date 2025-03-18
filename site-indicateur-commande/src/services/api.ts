@@ -29,6 +29,14 @@ export interface CAParPays {
   CA_Commande: number;
 }
 
+export interface MotifRepartition {
+  ID: number;
+  Date_Annee: number;
+  ID_Commercial: string; 
+  Motif: string;
+  Nb_Devis: number;
+}
+
 // Récupérer les données de commandes et objectifs
 export const getCommandesObjectifs = async (annee?: number, commercial?: string): Promise<CommandeObjectif[]> => {
   try {
@@ -157,6 +165,31 @@ export const getAnnees = async (): Promise<number[]> => {
     return response.data;
   } catch (error) {
     console.error('Erreur lors de la récupération des années:', error);
+    return [];
+  }
+};
+
+/**
+ * Récupère la répartition des motifs de commande par commercial et année
+ * @param annee Année à filtrer (optionnel)
+ * @param commercial ID du commercial à filtrer (optionnel)
+ * @returns Données de répartition des motifs
+ */
+export const getMotifRepartition = async (annee?: number, commercial?: string): Promise<MotifRepartition[]> => {
+  try {
+    const searchParams = new URLSearchParams();
+    if (annee) searchParams.append('annee', annee.toString());
+    if (commercial) searchParams.append('commercial', commercial);
+    
+    const response = await fetch(`${API_URL}/motif-repartition?${searchParams.toString()}`);
+    
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur lors de la récupération des motifs de commande:', error);
     return [];
   }
 }; 
