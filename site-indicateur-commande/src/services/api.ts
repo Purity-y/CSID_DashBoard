@@ -37,6 +37,15 @@ export interface MotifRepartition {
   Nb_Devis: number;
 }
 
+export interface TopSaleData {
+  ca: number;
+  documentDeVente: string;
+  commercial: string;
+  client: string;
+  date: string;
+  pays: string;
+}
+
 // Récupérer les données de commandes et objectifs
 export const getCommandesObjectifs = async (annee?: number, commercial?: string): Promise<CommandeObjectif[]> => {
   try {
@@ -191,5 +200,44 @@ export const getMotifRepartition = async (annee?: number, commercial?: string): 
   } catch (error) {
     console.error('Erreur lors de la récupération des motifs de commande:', error);
     return [];
+  }
+};
+
+/**
+ * Récupère la prédiction du CA
+ */
+export const getPredictionCA = async (): Promise<number> => {
+  try {
+    const response = await fetch(`${API_URL}/prediction-ca`);
+    
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.CA_Prediction || 0;
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la prédiction du CA:', error);
+    return 0;
+  }
+};
+
+export const fetchTopSales = async (annee?: number | null, commercial?: string | null): Promise<TopSaleData[]> => {
+  try {
+    const params = new URLSearchParams();
+    if (annee) params.append('annee', annee.toString());
+    if (commercial) params.append('commercial', commercial);
+    
+    const url = `${API_URL}/top-sales${params.toString() ? `?${params.toString()}` : ''}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors du chargement des données');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur lors de la récupération des top ventes:', error);
+    throw error;
   }
 }; 

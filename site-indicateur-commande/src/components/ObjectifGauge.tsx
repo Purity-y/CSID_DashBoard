@@ -179,7 +179,7 @@ const ObjectifGauge: React.FC<ObjectifGaugeProps> = ({ annee, commercial }) => {
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        Atteinte des objectifs
+        Atteinte des objectifs par année par commercial
       </div>
       <div style={contentStyle}>
         <div style={gaugeContainerStyle}>

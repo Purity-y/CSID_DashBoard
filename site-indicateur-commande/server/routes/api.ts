@@ -1,5 +1,17 @@
 import express from 'express';
-import { getCommandesObjectifs, getCommerciaux, getAnnees, getTauxConversion, getCAParPays, getCAParMois, getMotifRepartition } from '../services/commandeService';
+import { getCommandesObjectifs, getCommerciaux, getAnnees, getTauxConversion, getCAParPays, getCAParMois, getMotifRepartition, getPredictionCA, getTopSales } from '../services/commandeService';
+import { Request, Response } from 'express';
+import * as sql from 'mssql';
+import getConnection from '../config/db';
+
+interface SaleRecord {
+  CA: number;
+  Document_De_Vente: string;
+  Commercial: string;
+  Client: string;
+  Date: Date;
+  Pays: string;
+}
 
 const router = express.Router();
 
@@ -106,6 +118,34 @@ router.get('/motif-repartition', async (req, res) => {
   } catch (error) {
     console.error('Erreur lors de la récupération des motifs de commande:', error);
     res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Route pour obtenir la prédiction du CA
+router.get('/prediction-ca', async (req, res) => {
+  try {
+    const data = await getPredictionCA();
+    res.json({ CA_Prediction: data });
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la prédiction du CA:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération de la prédiction du CA' });
+  }
+});
+
+// Route pour récupérer le top 5 des ventes
+router.get('/top-sales', async (req: Request, res: Response) => {
+  try {
+    const { annee, commercial } = req.query;
+    
+    // Convertir les paramètres de requête en types appropriés
+    const anneeParam = annee ? parseInt(annee as string) : undefined;
+    const commercialParam = commercial as string;
+    
+    const data = await getTopSales(anneeParam, commercialParam);
+    res.json(data);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des top ventes:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des données' });
   }
 });
 

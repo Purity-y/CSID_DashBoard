@@ -15,19 +15,23 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 // Configuration des couleurs pour les motifs
 const MOTIF_COLORS = {
-  'Neuf': 'rgba(118, 88, 196, 0.8)', // Violet
-  'Retro': 'rgba(75, 192, 192, 0.8)', // Turquoise
-  'Sans suite': 'rgba(255, 159, 64, 0.8)', // Orange
-  'Refus': 'rgba(255, 99, 132, 0.8)', // Rose
-  'Autre': 'rgba(54, 162, 235, 0.8)' // Bleu
+  'NULL': 'rgba(200, 200, 200, 0.8)', // Gris clair
+  'A TITRE COMMERCIAL': 'rgba(255, 99, 132, 0.8)', // Rouge vif
+  'Annulation de commande': 'rgba(54, 162, 235, 0.8)', // Bleu vif
+  'Devis : Commandé': 'rgba(75, 192, 192, 0.8)', // Turquoise
+  'Devis : En cours': 'rgba(255, 206, 86, 0.8)', // Jaune
+  'Devis : Remplacé': 'rgba(153, 102, 255, 0.8)', // Violet
+  'Garantie : NC Mécanique': 'rgba(255, 159, 64, 0.8)' // Orange
 };
 
 const MOTIF_BORDER_COLORS = {
-  'Neuf': 'rgba(118, 88, 196, 1)',
-  'Retro': 'rgba(75, 192, 192, 1)',
-  'Sans suite': 'rgba(255, 159, 64, 1)',
-  'Refus': 'rgba(255, 99, 132, 1)',
-  'Autre': 'rgba(54, 162, 235, 1)'
+  'NULL': 'rgba(200, 200, 200, 1)',
+  'A TITRE COMMERCIAL': 'rgba(255, 99, 132, 1)',
+  'Annulation de commande': 'rgba(54, 162, 235, 1)',
+  'Devis : Commandé': 'rgba(75, 192, 192, 1)',
+  'Devis : En cours': 'rgba(255, 206, 86, 1)',
+  'Devis : Remplacé': 'rgba(153, 102, 255, 1)',
+  'Garantie : NC Mécanique': 'rgba(255, 159, 64, 1)'
 };
 
 interface MotifPieChartProps {
@@ -135,7 +139,7 @@ const MotifPieChart: React.FC<MotifPieChartProps> = ({ annee, commercial }) => {
   return (
     <div style={chartContainerStyle}>
       <div style={headerStyle}>
-        {`Répartition des motifs par commercial par année${annee ? ` - ${annee}` : ''}${commercial ? ` - Commercial: ${commercial}` : ''}`}
+        {`Répartition des motifs par année par commercial`}
       </div>
       <div style={chartStyle}>
         {isLoading ? (

@@ -564,7 +564,7 @@ const WorldMapChart: React.FC<WorldMapChartProps> = (props) => {
   return (
     <div style={chartContainerStyle}>
       <div style={headerStyle}>
-        {`CA commandé par pays${annee ? ` - ${annee}` : ''}${commercial ? ` - Commercial: ${commercial}` : ''}`}
+        {`CA commandé par pays par année par commercial`}
       </div>
       <div style={chartStyle}>
         {isLoading && (

@@ -226,7 +226,7 @@ const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({ annee, 
   return (
     <div style={chartContainerStyle}>
       <div style={headerStyle}>
-        {`CA commandé par date${annee ? ` - ${annee}` : ''}${commercial ? ` - Commercial: ${commercial}` : ''}`}
+        {`CA commandé par date par année par commercial`}
       </div>
       <div style={chartStyle}>
         {isLoading ? (

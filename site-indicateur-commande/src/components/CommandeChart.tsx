@@ -206,7 +206,7 @@ const CommandeChart: React.FC<CommandeChartProps> = ({ annee, commercial }) => {
   return (
     <div style={chartContainerStyle}>
       <div style={headerStyle}>
-        CA Commandes vs Objectifs {annee ? `- ${annee}` : '- Toutes années'}
+        Objectif de CA par année par commercial
       </div>
       <div style={chartStyle}>
         <Chart type='bar' data={chartData} options={options} />

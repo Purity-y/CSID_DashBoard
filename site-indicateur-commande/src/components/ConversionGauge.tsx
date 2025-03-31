@@ -68,7 +68,7 @@ const ConversionGauge: React.FC<ConversionGaugeProps> = ({ annee, commercial }) 
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        Taux de transformation des offres en commandes par commercial par année :
+        Taux de transformation des offres en commandes par année par commercial 
       </div>
       
       <div style={gaugeContainerStyle}>

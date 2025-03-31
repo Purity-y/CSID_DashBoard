@@ -28,6 +28,11 @@ export interface CAParPays {
   CA_Commande: number;
 }
 
+export interface MotifRepartition {
+  Motif: string;
+  Nb_Devis: number;
+}
+
 /**
  * Récupère les données de commandes et objectifs avec filtres optionnels
  */
@@ -285,21 +290,20 @@ export const getCAParMois = async (annee?: number, commercial?: string) => {
 };
 
 /**
- * Récupère la répartition des motifs de commande par commercial et année
+ * Récupère la répartition des motifs avec filtres par année et commercial
  */
-export const getMotifRepartition = async (annee?: number, commercial?: string) => {
+export const getMotifRepartition = async (annee?: number, commercial?: string): Promise<MotifRepartition[]> => {
   try {
     const pool = await getConnection();
     
     let query = `
       SELECT 
-        ID,
-        Date_Annee,
-        ID_Commercial,
-        Motif,
-        Nb_Devis
-      FROM [CSID].[dbo].[Taux_Motif]
-      WHERE 1=1
+        ISNULL(Motif, 'NULL') as Motif,
+        COUNT(*) as Nb_Devis
+      FROM 
+        [CSID].[dbo].[Taux_Motif]
+      WHERE 
+        1=1
     `;
     
     const params: any[] = [];
@@ -309,12 +313,17 @@ export const getMotifRepartition = async (annee?: number, commercial?: string) =
       params.push({ name: 'annee', value: annee });
     }
     
-    if (commercial) {
+    if (commercial && commercial !== 'all') {
       query += ` AND ID_Commercial = @commercial`;
       params.push({ name: 'commercial', value: commercial });
     }
     
-    query += ` ORDER BY Nb_Devis DESC`;
+    query += `
+      GROUP BY 
+        ISNULL(Motif, 'NULL')
+      ORDER BY 
+        Nb_Devis DESC
+    `;
     
     const request = pool.request();
     
@@ -324,9 +333,90 @@ export const getMotifRepartition = async (annee?: number, commercial?: string) =
     });
     
     const result = await request.query(query);
-    return result.recordset;
+    
+    // Fermer la connexion
+    await pool.close();
+    
+    return result.recordset as MotifRepartition[];
   } catch (error) {
-    console.error('Erreur lors de la récupération des motifs de commande:', error);
+    console.error('Erreur lors de la récupération des données de répartition des motifs:', error);
+    return [];
+  }
+};
+
+/**
+ * Récupère la prédiction du CA total
+ */
+export const getPredictionCA = async (): Promise<number> => {
+  try {
+    const pool = await getConnection();
+    
+    const query = `
+      SELECT SUM([CA_Pondere]) as CA_Prediction 
+      FROM [CSID].[dbo].[CA_Prediction]
+    `;
+    
+    const result = await pool.request().query(query);
+    
+    // Fermer la connexion
+    await pool.close();
+    
+    return result.recordset[0].CA_Prediction || 0;
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la prédiction du CA:', error);
+    return 0;
+  }
+};
+
+export const getTopSales = async (annee?: number, commercial?: string) => {
+  try {
+    const pool = await getConnection();
+    let query = `
+      SELECT TOP 5 
+        valeur_nette As CA,
+        V.Doc_vente As Document_De_Vente,
+        KC.Nom AS Commercial,
+        C.Designation_CLient_NAMEI as Client,
+        V.Date_doc As Date,
+        C.Pays_LAND1 As Pays
+      FROM Vente V
+      INNER JOIN kpi_Commercial KC ON V.GrVd = KC.ID_GRP_Vendeur
+      INNER JOIN KPI_Date KD ON CAST(V.Date_doc AS date) = kd.Date_Complet
+      INNER JOIN Client C ON V.Don_ordre = C.Code_Client_KUNNR
+      WHERE LEFT(Doc_vente, 4) = '1201'
+    `;
+
+    const conditions: string[] = [];
+    const request = pool.request();
+
+    if (annee) {
+      conditions.push('KD.Date_Annee = @annee');
+      request.input('annee', sql.Int, annee);
+    }
+
+    if (commercial && commercial !== 'all') {
+      conditions.push('KC.ID_Commercial = @commercial');
+      request.input('commercial', sql.NVarChar, commercial);
+    }
+
+    if (conditions.length > 0) {
+      query += ' AND ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY Valeur_nette DESC';
+
+    const result = await request.query(query);
+
+    return result.recordset.map(record => ({
+      ca: record.CA,
+      documentDeVente: record.Document_De_Vente,
+      commercial: record.Commercial,
+      client: record.Client,
+      date: record.Date,
+      pays: record.Pays
+    }));
+  } catch (error) {
+    console.error('Erreur lors de la récupération des top ventes:', error);
     throw error;
   }
 }; 

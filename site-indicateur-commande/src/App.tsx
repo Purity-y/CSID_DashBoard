@@ -7,6 +7,8 @@ import ConversionGauge from './components/ConversionGauge';
 import WorldMapChart from './components/WorldMapChart';
 import MonthlyComparisonChart from './components/MonthlyComparisonChart';
 import MotifPieChart from './components/MotifPieChart';
+import FunnelChart from './components/FunnelChart';
+import TopSalesTable from './components/TopSalesTable';
 
 function App() {
   const [filters, setFilters] = useState<{
@@ -60,9 +62,15 @@ function App() {
                 commercial={filters.commercial ?? undefined} 
               />
             </div>
-            <div style={emptySpaceStyle}></div>
+            <div style={funnelChartContainerStyle}>
+              <FunnelChart />
+            </div>
           </div>
         </div>
+        <TopSalesTable 
+          annee={filters.annee} 
+          commercial={filters.commercial} 
+        />
       </main>
     </div>
   );
@@ -145,21 +153,25 @@ const mapContainerStyle: React.CSSProperties = {
 
 const bottomRowStyle: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: '1fr 2fr',
+  gridTemplateColumns: '1fr 1fr',
   gap: '15px',
   alignItems: 'stretch'
 };
 
 const pieChartContainerStyle: React.CSSProperties = {
-  height: '300px',
+  height: '400px',
   backgroundColor: 'white',
   borderRadius: '8px',
   boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
   overflow: 'hidden'
 };
 
-const emptySpaceStyle: React.CSSProperties = {
-  flex: 1
+const funnelChartContainerStyle: React.CSSProperties = {
+  height: '400px',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  overflow: 'hidden'
 };
 
 export default App; 
