@@ -126,6 +126,7 @@ const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({ annee, 
   // Charger les données quand les filtres changent
   useEffect(() => {
     loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [annee, commercial]);
 
   // Calculer les comparaisons avec le mois précédent

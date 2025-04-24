@@ -88,7 +88,9 @@ const containerStyle: React.CSSProperties = {
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
-  marginTop: '20px'
+  marginTop: '20px',
+  maxWidth: '90%',
+  margin: '20px auto 0'
 };
 
 const headerStyle: React.CSSProperties = {

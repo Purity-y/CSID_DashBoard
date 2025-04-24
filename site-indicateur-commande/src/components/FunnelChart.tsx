@@ -12,7 +12,7 @@ import {
 } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Bar } from 'react-chartjs-2';
-import { getPredictionCA } from '../services/api';
+import { getFunnelData, FunnelData } from '../services/api';
 
 // Enregistrer les composants nécessaires
 ChartJS.register(
@@ -63,32 +63,24 @@ interface ExtendedChartOptions extends ChartOptions<'bar'> {
 }
 
 const FunnelChart: React.FC = () => {
-  const [prediction, setPrediction] = useState<number>(0);
+  const [funnelData, setFunnelData] = useState<FunnelData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Charger la prédiction
+  // Charger les données du funnel
   useEffect(() => {
-    const loadPrediction = async () => {
+    const loadFunnelData = async () => {
       try {
-        const data = await getPredictionCA();
-        setPrediction(data);
+        const data = await getFunnelData();
+        setFunnelData(data);
       } catch (error) {
-        console.error('Erreur lors du chargement de la prédiction:', error);
+        console.error('Erreur lors du chargement des données du funnel:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadPrediction();
+    loadFunnelData();
   }, []);
-
-  // Données de l'entonnoir avec largeurs ajustées
-  const funnelData = [
-    { label: 'Proba > 30%', percentage: 80, width: 1 },
-    { label: 'Proba > 50%', percentage: 50, width: 0.8 },
-    { label: 'Proba > 80%', percentage: 30, width: 0.6 },
-    { label: 'Commandé', percentage: 20, width: 0.4 }
-  ];
 
   // Configuration des données pour Chart.js
   const data: ExtendedChartData = {
@@ -96,8 +88,10 @@ const FunnelChart: React.FC = () => {
     datasets: [
       // Dataset pour l'espace à gauche (transparent)
       {
-        data: funnelData.map((item) => {
-          const totalSpace = 100 - item.percentage;
+        data: funnelData.map((_, index) => {
+          // Largeurs fixes pour créer l'effet d'entonnoir
+          const widths = [100, 80, 60, 40];
+          const totalSpace = 100 - widths[index];
           return totalSpace / 2;
         }),
         backgroundColor: 'transparent',
@@ -108,7 +102,11 @@ const FunnelChart: React.FC = () => {
       },
       // Dataset principal
       {
-        data: funnelData.map(item => item.percentage),
+        data: funnelData.map((_, index) => {
+          // Largeurs fixes pour créer l'effet d'entonnoir
+          const widths = [100, 80, 60, 40];
+          return widths[index];
+        }),
         backgroundColor: [
           'rgba(200, 220, 240, 0.8)',
           'rgba(150, 190, 230, 0.8)',
@@ -128,8 +126,10 @@ const FunnelChart: React.FC = () => {
       },
       // Dataset pour l'espace à droite (transparent)
       {
-        data: funnelData.map((item) => {
-          const totalSpace = 100 - item.percentage;
+        data: funnelData.map((_, index) => {
+          // Largeurs fixes pour créer l'effet d'entonnoir
+          const widths = [100, 80, 60, 40];
+          const totalSpace = 100 - widths[index];
           return totalSpace / 2;
         }),
         backgroundColor: 'transparent',
@@ -168,7 +168,7 @@ const FunnelChart: React.FC = () => {
           display: false
         },
         afterFit: (scale: any) => {
-          scale.height = 200; // Réduire la hauteur de l'axe Y
+          scale.height = 200;
         }
       }
     },
@@ -183,20 +183,26 @@ const FunnelChart: React.FC = () => {
           weight: 'bold',
           size: 14
         },
-        formatter: (value, context) => funnelData[context.dataIndex].label,
+        formatter: (value, context) => {
+          const data = funnelData[context.dataIndex];
+          return `${data.Niveau} | ${new Intl.NumberFormat('fr-FR', {
+            style: 'currency',
+            currency: 'EUR',
+            maximumFractionDigits: 0
+          }).format(data.CA_Prediction)}`;
+        },
         align: 'center',
         anchor: 'center'
       },
       tooltip: {
         callbacks: {
           label: (context) => {
-            const originalValue = funnelData[context.dataIndex].percentage;
-            const predictedValue = (prediction * originalValue / 100);
-            return `${originalValue}% - ${new Intl.NumberFormat('fr-FR', {
+            const data = funnelData[context.dataIndex];
+            return `Niveau: ${data.Niveau} | CA Prédit: ${new Intl.NumberFormat('fr-FR', {
               style: 'currency',
               currency: 'EUR',
               maximumFractionDigits: 0
-            }).format(predictedValue)}`;
+            }).format(data.CA_Prediction)} | Nombre de devis: ${data.Nombre_Devis}`;
           }
         }
       }
@@ -222,6 +228,8 @@ const FunnelChart: React.FC = () => {
       <div style={chartStyle}>
         {isLoading ? (
           <div style={loadingStyle}>Chargement...</div>
+        ) : funnelData.length === 0 ? (
+          <div style={noDataStyle}>Aucune donnée disponible</div>
         ) : (
           <>
             <div style={{ 
@@ -244,11 +252,11 @@ const FunnelChart: React.FC = () => {
               </div>
             </div>
             <div style={predictionStyle}>
-              {new Intl.NumberFormat('fr-FR', {
+              Total Prédit: {new Intl.NumberFormat('fr-FR', {
                 style: 'currency',
                 currency: 'EUR',
                 maximumFractionDigits: 0
-              }).format(prediction)}
+              }).format(funnelData.reduce((sum, item) => sum + item.CA_Prediction, 0))}
             </div>
           </>
         )}
@@ -305,6 +313,15 @@ const loadingStyle: React.CSSProperties = {
   alignItems: 'center',
   height: '100%',
   color: '#156082',
+  fontSize: '16px'
+};
+
+const noDataStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  height: '100%',
+  color: '#666',
   fontSize: '16px'
 };
 

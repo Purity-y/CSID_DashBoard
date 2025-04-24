@@ -1,5 +1,5 @@
 import express from 'express';
-import { getCommandesObjectifs, getCommerciaux, getAnnees, getTauxConversion, getCAParPays, getCAParMois, getMotifRepartition, getPredictionCA, getTopSales } from '../services/commandeService';
+import { getCommandesObjectifs, getCommerciaux, getAnnees, getTauxConversion, getCAParPays, getCAParMois, getMotifRepartition, getPredictionCA, getTopSales, getFunnelData, getTempsCAConversion } from '../services/commandeService';
 import { Request, Response } from 'express';
 import * as sql from 'mssql';
 import getConnection from '../config/db';
@@ -146,6 +146,34 @@ router.get('/top-sales', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Erreur lors de la récupération des top ventes:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération des données' });
+  }
+});
+
+// Route pour obtenir les données du funnel
+router.get('/funnel-data', async (req, res) => {
+  try {
+    const data = await getFunnelData();
+    res.json(data);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données du funnel:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des données du funnel' });
+  }
+});
+
+// Route pour obtenir les données de temps de conversion et CA
+router.get('/temps-ca-conversion', async (req, res) => {
+  try {
+    const { annee, commercial } = req.query;
+    
+    // Convertir les paramètres de requête en types appropriés
+    const anneeParam = annee ? parseInt(annee as string) : undefined;
+    const commercialParam = commercial as string;
+    
+    const data = await getTempsCAConversion(anneeParam, commercialParam);
+    res.json(data);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données de temps et CA:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des données de temps et CA' });
   }
 });
 

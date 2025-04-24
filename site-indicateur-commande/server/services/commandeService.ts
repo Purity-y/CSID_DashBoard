@@ -34,6 +34,15 @@ export interface MotifRepartition {
 }
 
 /**
+ * Interface pour les données de temps de conversion et CA
+ */
+export interface TempsCAConversion {
+  Mois: number;
+  Duree_Moyenne: number;
+  CA_Moyen: number;
+}
+
+/**
  * Récupère les données de commandes et objectifs avec filtres optionnels
  */
 export const getCommandesObjectifs = async (annee?: number, commercial?: string): Promise<CommandeObjectif[]> => {
@@ -418,5 +427,159 @@ export const getTopSales = async (annee?: number, commercial?: string) => {
   } catch (error) {
     console.error('Erreur lors de la récupération des top ventes:', error);
     throw error;
+  }
+};
+
+/**
+ * Récupère les données pour le FunnelChart selon les pourcentages de CA_Pondere ou Probabilite
+ */
+export const getFunnelData = async (): Promise<any[]> => {
+  try {
+    console.log('Tentative de connexion à la base de données...');
+    const pool = await getConnection();
+    console.log('Connexion à la base de données établie');
+    
+    // Vérifier si la table existe
+    const checkTableQuery = `
+      SELECT COUNT(*) as tableExists
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = 'dbo'
+      AND TABLE_NAME = 'CA_Prediction'
+    `;
+    
+    const tableCheck = await pool.request().query(checkTableQuery);
+    console.log('Vérification de la table:', tableCheck.recordset[0].tableExists);
+    
+    if (tableCheck.recordset[0].tableExists === 0) {
+      console.error('La table CA_Prediction n\'existe pas');
+      return [];
+    }
+    
+    const query = `
+      SELECT * FROM (
+        SELECT 
+          '20%' as Niveau,
+          SUM(CA_Pondere) as CA_Prediction,
+          COUNT(*) as Nombre_Devis,
+          1 as Ordre
+        FROM [CSID].[dbo].[CA_Prediction]
+        WHERE Probabilite <= 20
+        
+        UNION ALL
+        
+        SELECT 
+          '50-70%' as Niveau,
+          SUM(CA_Pondere) as CA_Prediction,
+          COUNT(*) as Nombre_Devis,
+          2 as Ordre
+        FROM [CSID].[dbo].[CA_Prediction]
+        WHERE Probabilite > 20 AND Probabilite <= 70
+        
+        UNION ALL
+        
+        SELECT 
+          '80%' as Niveau,
+          SUM(CA_Pondere) as CA_Prediction,
+          COUNT(*) as Nombre_Devis,
+          3 as Ordre
+        FROM [CSID].[dbo].[CA_Prediction]
+        WHERE Probabilite > 70 AND Probabilite <= 80
+        
+        UNION ALL
+        
+        SELECT 
+          '100%' as Niveau,
+          SUM(CA_Pondere) as CA_Prediction,
+          COUNT(*) as Nombre_Devis,
+          4 as Ordre
+        FROM [CSID].[dbo].[CA_Prediction]
+        WHERE Probabilite > 80
+      ) AS FunnelData
+      ORDER BY Ordre
+    `;
+    
+    console.log('Exécution de la requête...');
+    const result = await pool.request().query(query);
+    console.log('Résultats de la requête:', result.recordset);
+    
+    // Fermer la connexion
+    await pool.close();
+    console.log('Connexion fermée');
+    
+    return result.recordset;
+  } catch (error) {
+    console.error('Erreur détaillée lors de la récupération des données du FunnelChart:', error);
+    return [];
+  }
+};
+
+/**
+ * Récupère les données de temps de conversion et CA moyen par mois
+ * @param annee Année à filtrer (optionnel)
+ * @param commercial ID du commercial à filtrer (optionnel)
+ * @returns Données de temps de conversion et CA par mois
+ */
+export const getTempsCAConversion = async (annee?: number, commercial?: string): Promise<TempsCAConversion[]> => {
+  try {
+    const pool = await getConnection();
+    
+    let query = `
+      SELECT 
+        MONTH(Date_Commande) as Mois,
+        AVG(Duree_Conversion) as Duree_Moyenne,
+        AVG(Montant_CA) / 1000 as CA_Moyen
+      FROM 
+        [CSID].[dbo].[Temps_CA_Offre_Commande]
+      WHERE 
+        1=1
+    `;
+    
+    const params: any[] = [];
+    
+    if (annee) {
+      query += ` AND YEAR(Date_Commande) = @annee`;
+      params.push({ name: 'annee', value: annee });
+    }
+    
+    if (commercial && commercial !== 'all') {
+      query += ` AND Commercial_ID = @commercial`;
+      params.push({ name: 'commercial', value: commercial });
+    }
+    
+    query += `
+      GROUP BY 
+        MONTH(Date_Commande)
+      ORDER BY 
+        Mois
+    `;
+    
+    const request = pool.request();
+    
+    // Ajouter les paramètres à la requête
+    params.forEach(param => {
+      request.input(param.name, param.value);
+    });
+    
+    const result = await request.query(query);
+    
+    // Fermer la connexion
+    await pool.close();
+    
+    // Traiter les résultats pour avoir tous les mois (1-12)
+    const allMonths: TempsCAConversion[] = [];
+    
+    for (let i = 1; i <= 12; i++) {
+      const monthData = result.recordset.find(r => r.Mois === i);
+      allMonths.push({
+        Mois: i,
+        Duree_Moyenne: monthData ? monthData.Duree_Moyenne : 0,
+        CA_Moyen: monthData ? monthData.CA_Moyen : 0
+      });
+    }
+    
+    return allMonths;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données de temps et CA:', error);
+    return [];
   }
 }; 

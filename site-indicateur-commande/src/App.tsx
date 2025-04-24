@@ -9,6 +9,7 @@ import MonthlyComparisonChart from './components/MonthlyComparisonChart';
 import MotifPieChart from './components/MotifPieChart';
 import FunnelChart from './components/FunnelChart';
 import TopSalesTable from './components/TopSalesTable';
+import ConversionRadarChart from './components/ConversionRadarChart';
 
 function App() {
   const [filters, setFilters] = useState<{
@@ -56,6 +57,12 @@ function App() {
             </div>
           </div>
           <div style={bottomRowStyle}>
+            <div style={radarChartContainerStyle}>
+              <ConversionRadarChart 
+                annee={filters.annee ?? undefined} 
+                commercial={filters.commercial ?? undefined} 
+              />
+            </div>
             <div style={pieChartContainerStyle}>
               <MotifPieChart 
                 annee={filters.annee ?? undefined} 
@@ -94,7 +101,7 @@ const dashboardStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: '20px',
-  maxWidth: '1600px',
+  maxWidth: '90%',
   margin: '0 auto'
 };
 
@@ -153,9 +160,17 @@ const mapContainerStyle: React.CSSProperties = {
 
 const bottomRowStyle: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
+  gridTemplateColumns: '1fr 1fr 1fr',
   gap: '15px',
   alignItems: 'stretch'
+};
+
+const radarChartContainerStyle: React.CSSProperties = {
+  height: '400px',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  overflow: 'hidden'
 };
 
 const pieChartContainerStyle: React.CSSProperties = {

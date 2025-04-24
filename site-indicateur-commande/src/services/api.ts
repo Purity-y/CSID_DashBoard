@@ -46,6 +46,18 @@ export interface TopSaleData {
   pays: string;
 }
 
+export interface FunnelData {
+  Niveau: string;
+  CA_Prediction: number;
+  Nombre_Devis: number;
+}
+
+export interface TempsCAConversion {
+  Mois: number;
+  Duree_Moyenne: number;
+  CA_Moyen: number;
+}
+
 // Récupérer les données de commandes et objectifs
 export const getCommandesObjectifs = async (annee?: number, commercial?: string): Promise<CommandeObjectif[]> => {
   try {
@@ -239,5 +251,43 @@ export const fetchTopSales = async (annee?: number | null, commercial?: string |
   } catch (error) {
     console.error('Erreur lors de la récupération des top ventes:', error);
     throw error;
+  }
+};
+
+export const getFunnelData = async (): Promise<FunnelData[]> => {
+  try {
+    const response = await fetch(`${API_URL}/funnel-data`);
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des données du funnel');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données du funnel:', error);
+    return [];
+  }
+};
+
+/**
+ * Récupère les données de temps de conversion et CA par mois
+ * @param annee Année à filtrer (optionnel)
+ * @param commercial ID du commercial à filtrer (optionnel)
+ * @returns Données de temps de conversion et CA par mois
+ */
+export const getTempsCAConversion = async (annee?: number, commercial?: string): Promise<TempsCAConversion[]> => {
+  try {
+    const searchParams = new URLSearchParams();
+    if (annee) searchParams.append('annee', annee.toString());
+    if (commercial) searchParams.append('commercial', commercial);
+    
+    const response = await fetch(`${API_URL}/temps-ca-conversion?${searchParams.toString()}`);
+    
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données de temps et CA:', error);
+    return [];
   }
 }; 
