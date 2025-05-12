@@ -16,6 +16,7 @@ import * as ChartGeo from 'chartjs-chart-geo';
 // Import topojson-client
 import * as topojson from 'topojson-client';
 import { getCAParPays } from '../services/api';
+import ChartFocusWrapper from './ChartFocusWrapper';
 
 // Enregistrer les composants nécessaires pour Chart.js
 // Enregistrer d'abord les échelles et contrôleurs de base
@@ -276,6 +277,8 @@ const WorldMapChart: React.FC<WorldMapChartProps> = (props) => {
   const worldAtlasRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const filtersRef = useRef({ annee, commercial });
+  const [chartData, setChartData] = useState<any>(null); // Nouvel état pour stocker les données du graphique
+  const [chartInitialized, setChartInitialized] = useState(false);
   
   // Fonction pour traiter et normaliser les filtres
   const processFilters = useCallback(() => {
@@ -344,7 +347,7 @@ const WorldMapChart: React.FC<WorldMapChartProps> = (props) => {
   
   // Fonction pour mettre à jour le graphique avec des données
   const updateChart = useCallback((data: any[]) => {
-    if (!worldAtlasRef.current || !chartRef.current) return;
+    if (!worldAtlasRef.current) return;
     
     try {
       // Si pas de données, réinitialiser la carte avec des données vides
@@ -426,10 +429,15 @@ const WorldMapChart: React.FC<WorldMapChartProps> = (props) => {
         }]
       };
       
-      // Mettre à jour le graphique
-      chartRef.current.data = newChartData;
-      chartRef.current.update('none');
-      console.log('✅ Graphique mis à jour avec succès');
+      // Stocker les données dans l'état pour les avoir disponibles même après un changement de focus
+      setChartData(newChartData);
+
+      // Mettre à jour le graphique si la référence existe
+      if (chartRef.current) {
+        chartRef.current.data = newChartData;
+        chartRef.current.update('none');
+        console.log('✅ Graphique mis à jour avec succès');
+      }
     } catch (error) {
       console.error('❌ Erreur lors de la mise à jour du graphique:', error);
       initializeEmptyChart();
@@ -561,124 +569,159 @@ const WorldMapChart: React.FC<WorldMapChartProps> = (props) => {
     return countryName;
   };
 
+  // Après chaque render, assurons-nous que les données sont bien appliquées au graphique
+  useEffect(() => {
+    // Si nous avons des données de graphique mais que le graphique ne les a pas, appliquer les données
+    if (chartData && chartRef.current && chartInitialized) {
+      try {
+        chartRef.current.data = chartData;
+        // Utiliser un timeout pour s'assurer que le DOM est prêt
+        setTimeout(() => {
+          if (chartRef.current && chartRef.current.canvas && document.body.contains(chartRef.current.canvas)) {
+            chartRef.current.update('none');
+            console.log('🔄 Réapplication des données après render');
+          }
+        }, 0);
+      } catch (error) {
+        console.error('Erreur lors de la mise à jour du graphique:', error);
+      }
+    }
+  });
+
+  // Fonction pour gérer la référence du graphique
+  const handleChartRef = (ref: any) => {
+    if (ref) {
+      chartRef.current = ref;
+      // Appliquer les données au graphique si elles existent déjà
+      if (chartData && !chartInitialized) {
+        try {
+          chartRef.current.data = chartData;
+          // Utiliser un timeout pour s'assurer que le DOM est prêt
+          setTimeout(() => {
+            if (chartRef.current && chartRef.current.canvas && document.body.contains(chartRef.current.canvas)) {
+              chartRef.current.update('none');
+              setChartInitialized(true);
+              console.log('📊 Données réappliquées à la nouvelle référence du graphique');
+            }
+          }, 0);
+        } catch (error) {
+          console.error('Erreur lors de l\'initialisation du graphique:', error);
+        }
+      }
+    }
+  };
+
   return (
-    <div style={chartContainerStyle}>
-      <div style={headerStyle}>
-        {`CA commandé par pays par année par commercial`}
-      </div>
-      <div style={chartStyle}>
+    <ChartFocusWrapper title="CA commandé par pays par année par commercial">
+      <div style={mapContainerStyle}>
         {isLoading && (
           <div style={loadingStyle}>
             <span>Chargement des données...</span>
           </div>
         )}
-        <Chart 
-          ref={chartRef}
-          type="choropleth" 
-          data={chartRef.current?.data || {
-            labels: [],
-            datasets: [{
-              label: 'CA par pays',
-              data: [],
-              backgroundColor: 'rgba(220, 220, 220, 0.5)',
-              borderColor: '#156082',
-              borderWidth: 0.5,
-            }]
-          }}
-          options={{
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: false
-              },
-              tooltip: {
-                callbacks: {
-                  label: (context: any) => {
-                    const countryId = context.raw?.feature?.id;
-                    const countryName = context.raw?.feature?.properties?.name || 'Pays inconnu';
-                    const value = context.raw?.value || 0;
-                    const frenchName = getFrenchCountryName(countryId, countryName);
-                    return `${frenchName}: ${formatCurrency(value)}`;
+        <div style={chartWrapperStyle}>
+          <Chart 
+            ref={handleChartRef}
+            type="choropleth" 
+            data={chartData || {
+              labels: [],
+              datasets: [{
+                label: 'CA par pays',
+                data: [],
+                backgroundColor: 'rgba(220, 220, 220, 0.5)',
+                borderColor: '#156082',
+                borderWidth: 0.5,
+              }]
+            }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context: any) => {
+                      const countryId = context.raw?.feature?.id;
+                      const countryName = context.raw?.feature?.properties?.name || 'Pays inconnu';
+                      const value = context.raw?.value || 0;
+                      const frenchName = getFrenchCountryName(countryId, countryName);
+                      return `${frenchName}: ${formatCurrency(value)}`;
+                    }
                   }
                 }
-              }
-            },
-            scales: {
-              projection: {
-                axis: 'x',
-                projection: 'equalEarth'
               },
-              color: {
-                axis: 'y',
-                display: false,
-                interpolate: (v: number) => {
-                  return `rgba(0, 100, 255, ${0.2 + (v || 0) * 0.8})`;
+              scales: {
+                projection: {
+                  axis: 'x',
+                  projection: 'equalEarth'
+                },
+                color: {
+                  axis: 'y',
+                  display: false,
+                  interpolate: (v: number) => {
+                    return `rgba(0, 100, 255, ${0.2 + (v || 0) * 0.8})`;
+                  }
+                }
+              },
+              animation: false,
+              devicePixelRatio: 2,
+              elements: {
+                point: {
+                  radius: 0
                 }
               }
-            },
-            animation: false,
-            devicePixelRatio: 2,
-            elements: {
-              point: {
-                radius: 0
-              }
-            }
-          }}
-        />
-      </div>
-      <div style={legendStyle}>
-        <div style={legendItemStyle}>
-          <div style={{...legendColorStyle, backgroundColor: 'rgba(0, 100, 255, 0.2)'}}></div>
-          <span>Faible</span>
+            }}
+          />
         </div>
-        <div style={legendItemStyle}>
-          <div style={{...legendColorStyle, backgroundColor: 'rgba(0, 100, 255, 0.5)'}}></div>
-          <span>Moyen</span>
-        </div>
-        <div style={legendItemStyle}>
-          <div style={{...legendColorStyle, backgroundColor: 'rgba(0, 100, 255, 0.8)'}}></div>
-          <span>Élevé</span>
-        </div>
-        <div style={legendItemStyle}>
-          <div style={{...legendColorStyle, backgroundColor: 'rgba(0, 100, 255, 1)'}}></div>
-          <span>Très élevé</span>
+        <div style={legendContainerStyle}>
+          <div style={legendStyle}>
+            <div style={legendItemStyle}>
+              <div style={{...legendColorStyle, backgroundColor: 'rgba(0, 100, 255, 0.2)'}}></div>
+              <span>Faible</span>
+            </div>
+            <div style={legendItemStyle}>
+              <div style={{...legendColorStyle, backgroundColor: 'rgba(0, 100, 255, 0.5)'}}></div>
+              <span>Moyen</span>
+            </div>
+            <div style={legendItemStyle}>
+              <div style={{...legendColorStyle, backgroundColor: 'rgba(0, 100, 255, 0.8)'}}></div>
+              <span>Élevé</span>
+            </div>
+            <div style={legendItemStyle}>
+              <div style={{...legendColorStyle, backgroundColor: 'rgba(0, 100, 255, 1)'}}></div>
+              <span>Très élevé</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </ChartFocusWrapper>
   );
 };
 
 // Styles
-const chartContainerStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  margin: '0',
-  padding: '0',
-  overflow: 'hidden',
-  border: '1px solid #156082',
+const mapContainerStyle: React.CSSProperties = {
   height: '100%',
+  width: '100%',
   display: 'flex',
-  flexDirection: 'column'
+  flexDirection: 'column',
+  position: 'relative'
 };
 
-const headerStyle: React.CSSProperties = {
-  backgroundColor: '#156082',
-  color: 'white',
-  padding: '10px 15px',
-  fontSize: '14px',
-  fontWeight: 'bold'
-};
-
-const chartStyle: React.CSSProperties = {
-  height: '500px',
-  padding: '15px',
+const chartWrapperStyle: React.CSSProperties = {
   flex: 1,
+  position: 'relative',
+  minHeight: '420px'
+};
+
+const legendContainerStyle: React.CSSProperties = {
+  width: '100%',
   display: 'flex',
   justifyContent: 'center',
-  alignItems: 'center',
-  position: 'relative'
+  padding: '5px 0 15px',
+  backgroundColor: 'white',
+  marginTop: '-10px'
 };
 
 const loadingStyle: React.CSSProperties = {

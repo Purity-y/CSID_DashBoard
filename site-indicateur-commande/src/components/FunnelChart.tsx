@@ -13,6 +13,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Bar } from 'react-chartjs-2';
 import { getFunnelData, FunnelData } from '../services/api';
+import ChartFocusWrapper from './ChartFocusWrapper';
 
 // Enregistrer les composants nécessaires
 ChartJS.register(
@@ -65,6 +66,7 @@ interface ExtendedChartOptions extends ChartOptions<'bar'> {
 const FunnelChart: React.FC = () => {
   const [funnelData, setFunnelData] = useState<FunnelData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   // Charger les données du funnel
   useEffect(() => {
@@ -168,7 +170,8 @@ const FunnelChart: React.FC = () => {
           display: false
         },
         afterFit: (scale: any) => {
-          scale.height = 200;
+          // Ajuster la hauteur de l'échelle en fonction du mode focus
+          scale.height = isFocusMode ? 400 : 200;
         }
       }
     },
@@ -181,7 +184,7 @@ const FunnelChart: React.FC = () => {
         color: '#156082',
         font: {
           weight: 'bold',
-          size: 14
+          size: isFocusMode ? 22 : 14
         },
         formatter: (value, context) => {
           const data = funnelData[context.dataIndex];
@@ -209,10 +212,10 @@ const FunnelChart: React.FC = () => {
     },
     layout: {
       padding: {
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: 20
+        left: isFocusMode ? 40 : 20,
+        right: isFocusMode ? 40 : 20,
+        top: isFocusMode ? 60 : 20,
+        bottom: isFocusMode ? 60 : 20
       }
     },
     animation: {
@@ -221,11 +224,11 @@ const FunnelChart: React.FC = () => {
   };
 
   return (
-    <div style={chartContainerStyle}>
-      <div style={headerStyle}>
-        Prédiction du CA - 2017
-      </div>
-      <div style={chartStyle}>
+    <ChartFocusWrapper 
+      title="Prédiction du CA - 2017"
+      onFocusChange={setIsFocusMode}
+    >
+      <div style={chartContentStyle}>
         {isLoading ? (
           <div style={loadingStyle}>Chargement...</div>
         ) : funnelData.length === 0 ? (
@@ -239,19 +242,25 @@ const FunnelChart: React.FC = () => {
               justifyContent: 'center',
               alignItems: 'center',
               height: '100%',
-              padding: '0 20px'
+              padding: isFocusMode ? '0 40px' : '0 20px'
             }}>
               <div style={{ 
                 width: '100%', 
-                maxWidth: '600px',
-                height: '250px',
+                // Adapter la taille du graphique en fonction du mode focus
+                maxWidth: isFocusMode ? '1000px' : '600px',
+                height: isFocusMode ? '550px' : '250px',
                 margin: '0 auto',
                 position: 'relative'
               }}>
                 <Bar data={data} options={options} />
               </div>
             </div>
-            <div style={predictionStyle}>
+            <div style={{
+              ...predictionStyle,
+              fontSize: isFocusMode ? '28px' : '20px',
+              padding: isFocusMode ? '20px' : '10px',
+              margin: isFocusMode ? '20px 40px' : '10px 0',
+            }}>
               Total Prédit: {new Intl.NumberFormat('fr-FR', {
                 style: 'currency',
                 currency: 'EUR',
@@ -261,36 +270,15 @@ const FunnelChart: React.FC = () => {
           </>
         )}
       </div>
-    </div>
+    </ChartFocusWrapper>
   );
 };
 
 // Styles
-const chartContainerStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  margin: '0',
-  padding: '0',
-  overflow: 'hidden',
-  border: '1px solid #156082',
+const chartContentStyle: React.CSSProperties = {
   height: '100%',
-  display: 'flex',
-  flexDirection: 'column'
-};
-
-const headerStyle: React.CSSProperties = {
-  backgroundColor: '#156082',
-  color: 'white',
-  padding: '10px 15px',
-  fontSize: '14px',
-  fontWeight: 'bold'
-};
-
-const chartStyle: React.CSSProperties = {
-  height: '300px',
+  width: '100%',
   padding: '10px',
-  flex: 1,
   display: 'flex',
   flexDirection: 'column',
   position: 'relative'

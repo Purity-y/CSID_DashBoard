@@ -23,11 +23,6 @@ const Header: React.FC<HeaderProps> = ({ onFilterChange }) => {
         setAnnees(anneesData);
         setCommerciaux(commerciauxData);
         
-        // Si pas de sélection, prendre la première valeur
-        if (!selectedAnnee && anneesData.length > 0) {
-          setSelectedAnnee(anneesData[0]);
-        }
-        
         setIsLoading(false);
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error);

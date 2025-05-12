@@ -9,6 +9,7 @@ import {
   ChartOptions
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import ChartFocusWrapper from './ChartFocusWrapper';
 
 // Enregistrer les composants nécessaires pour Chart.js
 ChartJS.register(
@@ -30,6 +31,15 @@ const ObjectifGauge: React.FC<ObjectifGaugeProps> = ({ annee, commercial }) => {
   const [caCommande, setCaCommande] = useState<number>(0);
   const [caObjectif, setCaObjectif] = useState<number>(0);
   const [animationPercentage, setAnimationPercentage] = useState<number>(0);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+
+  // Define style that depends on isFocusMode inside the component
+  const detailsContainerStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: isFocusMode ? '16px' : '8px',
+    marginTop: isFocusMode ? '5px' : '30px'
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -136,7 +146,7 @@ const ObjectifGauge: React.FC<ObjectifGaugeProps> = ({ annee, commercial }) => {
   const chartOptions: ChartOptions<'doughnut'> = {
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '70%', // Réduction de l'épaisseur de l'anneau
+    cutout: isFocusMode ? '75%' : '70%', // Ajustement de l'épaisseur de l'anneau en mode focus
     plugins: {
       legend: {
         display: false
@@ -147,10 +157,10 @@ const ObjectifGauge: React.FC<ObjectifGaugeProps> = ({ annee, commercial }) => {
     },
     layout: {
       padding: {
-        top: 10, // Réduction du padding
-        bottom: 10,
-        left: 10,
-        right: 10
+        top: isFocusMode ? 20 : 10,
+        bottom: isFocusMode ? 20 : 10,
+        left: isFocusMode ? 20 : 10,
+        right: isFocusMode ? 20 : 10
       }
     }
   };
@@ -177,36 +187,92 @@ const ObjectifGauge: React.FC<ObjectifGaugeProps> = ({ annee, commercial }) => {
   }
 
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        Atteinte des objectifs par année par commercial
-      </div>
-      <div style={contentStyle}>
-        <div style={gaugeContainerStyle}>
+    <ChartFocusWrapper 
+      title="Atteinte des objectifs par année par commercial"
+      onFocusChange={setIsFocusMode}
+    >
+      <div style={{
+        ...contentWrapperStyle,
+        padding: isFocusMode ? '30px' : '15px',
+        gap: isFocusMode ? '30px' : '15px'
+      }}>
+        <div style={{
+          ...gaugeContainerStyle,
+          height: isFocusMode ? '300px' : '160px'
+        }}>
           <div style={gaugeWrapperStyle}>
             <Doughnut data={chartData} options={chartOptions} />
-            <div style={percentageOverlayStyle}>
-              <div style={percentageValueStyle}>{animationPercentage.toFixed(1)}%</div>
-              <div style={percentageLabelStyle}>
+            <div style={{
+              ...percentageOverlayStyle,
+              bottom: isFocusMode ? '30px' : '15px'
+            }}>
+              <div style={{
+                ...percentageValueStyle,
+                fontSize: isFocusMode ? '36px' : '24px'
+              }}>
+                {animationPercentage.toFixed(1)}%
+              </div>
+              <div style={{
+                ...percentageLabelStyle,
+                fontSize: isFocusMode ? '16px' : '12px'
+              }}>
                 {caObjectif <= 0 ? "objectif dépassé" : "des objectifs"}
               </div>
             </div>
-            <div style={markersContainerStyle}>
-              <div style={{...markerStyle, left: '0%'}}>0%</div>
-              <div style={{...markerStyle, left: '25%'}}>50%</div>
-              <div style={{...markerStyle, left: '50%'}}>100%</div>
-              <div style={{...markerStyle, left: '75%'}}>150%</div>
-              <div style={{...markerStyle, left: '100%'}}>200%</div>
+            
+            <div style={{
+              ...gaugeScaleContainerStyle,
+              marginTop: isFocusMode ? '10px' : '5px',
+              width: isFocusMode ? '47%' : '80%',
+              height: isFocusMode ? '20px' : '30px'
+            }}>
+              <div style={{
+                ...gaugeScaleBarStyle,
+                height: isFocusMode ? '1px' : '2px'
+              }}></div>
+              <div style={gaugeScaleMarkersStyle}>
+                {[0, 50, 100, 150, 200].map((value, index) => (
+                  <div key={value} style={{
+                    ...gaugeScaleMarkerStyle,
+                    left: isFocusMode 
+                      ? value === 0 ? '0%' 
+                      : value === 50 ? '25%' 
+                      : value === 100 ? '50%' 
+                      : value === 150 ? '75%' 
+                      : '100%'
+                      : `${index * 25}%`,
+                  }}>
+                    <div style={{
+                      ...gaugeScaleTickStyle,
+                      height: isFocusMode ? '3px' : '8px',
+                      marginBottom: isFocusMode ? '0px' : '4px'
+                    }}></div>
+                    <div style={{
+                      ...gaugeScaleLabelStyle,
+                      fontSize: isFocusMode ? '13px' : '10px',
+                      fontWeight: isFocusMode ? 'bold' : 'bold'
+                    }}>
+                      {value}%
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
         
         <div style={detailsContainerStyle}>
-          <div style={detailRowStyle}>
+          <div style={{
+            ...detailRowStyle,
+            fontSize: isFocusMode ? '18px' : '14px'
+          }}>
             <span style={detailLabelStyle}>CA Commande:</span>
             <span style={detailValueStyle}>{formatCurrency(caCommande)}</span>
           </div>
-          <div style={detailRowStyle}>
+          <div style={{
+            ...detailRowStyle,
+            fontSize: isFocusMode ? '18px' : '14px'
+          }}>
             <span style={detailLabelStyle}>CA Objectif:</span>
             <span style={detailValueStyle}>
               {caObjectif <= 0 
@@ -215,7 +281,10 @@ const ObjectifGauge: React.FC<ObjectifGaugeProps> = ({ annee, commercial }) => {
               }
             </span>
           </div>
-          <div style={detailRowStyle}>
+          <div style={{
+            ...detailRowStyle,
+            fontSize: isFocusMode ? '18px' : '14px'
+          }}>
             <span style={detailLabelStyle}>Différence:</span>
             {caObjectif <= 0 ? (
               <span style={{...detailValueStyle, color: caCommande > 0 ? '#4CAF50' : '#666'}}>
@@ -232,36 +301,19 @@ const ObjectifGauge: React.FC<ObjectifGaugeProps> = ({ annee, commercial }) => {
           </div>
         </div>
       </div>
-    </div>
+    </ChartFocusWrapper>
   );
 };
 
 // Styles
-const containerStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  overflow: 'hidden',
-  border: '1px solid #156082',
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column'
-};
-
-const headerStyle: React.CSSProperties = {
-  fontSize: '14px',
-  fontWeight: 'bold',
-  color: 'white',
-  backgroundColor: '#156082',
-  padding: '10px 15px'
-};
-
-const contentStyle: React.CSSProperties = {
+const contentWrapperStyle: React.CSSProperties = {
   padding: '15px',
   display: 'flex',
   flexDirection: 'column',
   gap: '15px',
-  flex: 1
+  flex: 1,
+  height: '100%',
+  width: '100%'
 };
 
 const gaugeContainerStyle: React.CSSProperties = {
@@ -297,28 +349,49 @@ const percentageLabelStyle: React.CSSProperties = {
   color: '#666'
 };
 
-const markersContainerStyle: React.CSSProperties = {
-  position: 'absolute',
-  bottom: '-5px', // Ajustement de la position pour mieux s'adapter à la taille réduite
-  left: '0',
-  width: '100%',
-  display: 'flex',
-  justifyContent: 'space-between',
-  padding: '0 10%'
+const gaugeScaleContainerStyle: React.CSSProperties = {
+  position: 'relative',
+  width: '80%',
+  margin: '0 auto',
+  marginTop: '5px',
+  height: '30px'
 };
 
-const markerStyle: React.CSSProperties = {
+const gaugeScaleBarStyle: React.CSSProperties = {
   position: 'absolute',
-  fontSize: '10px', // Réduction de la taille de police
-  color: '#666',
+  top: '0',
+  left: '0',
+  width: '100%',
+  height: '2px',
+  backgroundColor: '#ddd',
+  borderRadius: '2px'
+};
+
+const gaugeScaleMarkersStyle: React.CSSProperties = {
+  position: 'relative',
+  width: '100%',
+  height: '100%'
+};
+
+const gaugeScaleMarkerStyle: React.CSSProperties = {
+  position: 'absolute',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
   transform: 'translateX(-50%)'
 };
 
-const detailsContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '8px',
-  marginTop: '5px'
+const gaugeScaleTickStyle: React.CSSProperties = {
+  width: '2px',
+  height: '8px',
+  backgroundColor: '#666',
+  marginBottom: '4px'
+};
+
+const gaugeScaleLabelStyle: React.CSSProperties = {
+  fontSize: '10px',
+  color: '#666',
+  fontWeight: 'bold'
 };
 
 const detailRowStyle: React.CSSProperties = {

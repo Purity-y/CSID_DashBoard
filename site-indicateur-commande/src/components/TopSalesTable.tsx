@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { TopSaleData, fetchTopSales } from '../services/api';
+import ChartFocusWrapper from './ChartFocusWrapper';
 
 interface TopSalesTableProps {
   annee?: number | null;
@@ -30,79 +31,65 @@ const TopSalesTable: React.FC<TopSalesTableProps> = ({ annee, commercial }) => {
   }, [annee, commercial]);
 
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        {`Liste des meilleures ventes par année par commercial`}
-      </div>
-      <div style={contentStyle}>
-        {isLoading ? (
-          <div style={loadingStyle}>
-            <span>Chargement des données...</span>
-          </div>
-        ) : error ? (
-          <div style={errorStyle}>
-            <span>{error}</span>
-          </div>
-        ) : sales.length === 0 ? (
-          <div style={noDataStyle}>
-            <span>Aucune donnée disponible</span>
-          </div>
-        ) : (
-          <div style={tableContainerStyle}>
-            <table style={tableStyle}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>CA</th>
-                  <th style={thStyle}>Document</th>
-                  <th style={thStyle}>Commercial</th>
-                  <th style={thStyle}>Client</th>
-                  <th style={thStyle}>Date</th>
-                  <th style={thStyle}>Pays</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sales.map((sale, index) => (
-                  <tr key={index} style={index % 2 === 0 ? evenRowStyle : oddRowStyle}>
-                    <td style={tdStyle}>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(sale.ca)}</td>
-                    <td style={tdStyle}>{sale.documentDeVente}</td>
-                    <td style={tdStyle}>{sale.commercial}</td>
-                    <td style={tdStyle}>{sale.client}</td>
-                    <td style={tdStyle}>{new Date(sale.date).toLocaleDateString('fr-FR')}</td>
-                    <td style={tdStyle}>{sale.pays}</td>
+    <div style={wrapperStyle}>
+      <ChartFocusWrapper title="Liste des meilleures ventes par année par commercial">
+        <div style={contentWrapperStyle}>
+          {isLoading ? (
+            <div style={loadingStyle}>
+              <span>Chargement des données...</span>
+            </div>
+          ) : error ? (
+            <div style={errorStyle}>
+              <span>{error}</span>
+            </div>
+          ) : sales.length === 0 ? (
+            <div style={noDataStyle}>
+              <span>Aucune donnée disponible</span>
+            </div>
+          ) : (
+            <div style={tableContainerStyle}>
+              <table style={tableStyle}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>CA</th>
+                    <th style={thStyle}>Document</th>
+                    <th style={thStyle}>Commercial</th>
+                    <th style={thStyle}>Client</th>
+                    <th style={thStyle}>Date</th>
+                    <th style={thStyle}>Pays</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {sales.map((sale, index) => (
+                    <tr key={index} style={index % 2 === 0 ? evenRowStyle : oddRowStyle}>
+                      <td style={tdStyle}>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(sale.ca)}</td>
+                      <td style={tdStyle}>{sale.documentDeVente}</td>
+                      <td style={tdStyle}>{sale.commercial}</td>
+                      <td style={tdStyle}>{sale.client}</td>
+                      <td style={tdStyle}>{new Date(sale.date).toLocaleDateString('fr-FR')}</td>
+                      <td style={tdStyle}>{sale.pays}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </ChartFocusWrapper>
     </div>
   );
 };
 
-const containerStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  border: '1px solid #156082',
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  marginTop: '20px',
+// Style pour le conteneur externe qui définit la taille et l'alignement
+const wrapperStyle: React.CSSProperties = {
   maxWidth: '90%',
-  margin: '20px auto 0'
+  margin: '20px auto 0',
+  height: 'auto'
 };
 
-const headerStyle: React.CSSProperties = {
-  backgroundColor: '#156082',
-  color: 'white',
-  padding: '10px 15px',
-  fontSize: '14px',
-  fontWeight: 'bold'
-};
-
-const contentStyle: React.CSSProperties = {
-  flex: 1,
+const contentWrapperStyle: React.CSSProperties = {
+  height: '100%',
+  width: '100%',
   position: 'relative',
   minHeight: '300px'
 };

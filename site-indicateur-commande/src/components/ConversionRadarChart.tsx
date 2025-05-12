@@ -10,6 +10,7 @@ import {
 } from 'chart.js';
 import { Radar } from 'react-chartjs-2';
 import { getTempsCAConversion, TempsCAConversion } from '../services/api';
+import ChartFocusWrapper from './ChartFocusWrapper';
 
 ChartJS.register(
   RadialLinearScale,
@@ -35,6 +36,7 @@ const ConversionRadarChart: React.FC<ConversionRadarChartProps> = ({ annee, comm
   const [isLoading, setIsLoading] = useState(true);
   const [conversionData, setConversionData] = useState<TempsCAConversion[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,18 +61,18 @@ const ConversionRadarChart: React.FC<ConversionRadarChartProps> = ({ annee, comm
     labels: months,
     datasets: [
       {
-        label: 'Temps moyen entre le passage de la demande en commande (en J)',
+        label: 'Temps moyen (en jours)',
         data: conversionData.map(item => item.Duree_Moyenne),
         backgroundColor: 'rgba(255, 99, 132, 0.2)',
         borderColor: 'rgba(255, 99, 132, 1)',
-        borderWidth: 1,
+        borderWidth: isFocusMode ? 2 : 1,
       },
       {
-        label: 'CA moyen par commande (en K€)',
+        label: 'CA moyen (en K€)',
         data: conversionData.map(item => item.CA_Moyen),
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1,
+        borderWidth: isFocusMode ? 2 : 1,
       },
     ],
   };
@@ -78,43 +80,83 @@ const ConversionRadarChart: React.FC<ConversionRadarChartProps> = ({ annee, comm
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    aspectRatio: 1,
+    layout: {
+      padding: 0
+    },
+    elements: {
+      line: {
+        borderWidth: 2
+      },
+      point: {
+        radius: 3,
+        hoverRadius: 5
+      }
+    },
     scales: {
       r: {
         angleLines: {
           display: true,
           color: 'rgba(0, 0, 0, 0.1)',
         },
+        grid: {
+          circular: true,
+          color: 'rgba(0, 0, 0, 0.1)'
+        },
         suggestedMin: 0,
         ticks: {
           stepSize: 20,
+          font: {
+            size: isFocusMode ? 14 : 10
+          },
+          backdropPadding: 1,
+          showLabelBackdrop: false,
+          maxTicksLimit: 5
         },
+        pointLabels: {
+          font: {
+            size: isFocusMode ? 16 : 10,
+            weight: 'bold' as const
+          },
+          padding: 0,
+          centerPointLabels: true
+        }
       },
     },
     plugins: {
       legend: {
         position: 'bottom' as const,
+        align: 'center' as const,
         labels: {
-          boxWidth: 12,
-          padding: 15,
+          boxWidth: isFocusMode ? 16 : 10,
+          boxHeight: isFocusMode ? 10 : 6,
+          padding: isFocusMode ? 20 : 3,
           font: {
-            size: 11
+            size: isFocusMode ? 16 : 10,
+            weight: 'bold' as const
           }
         }
       },
       title: {
-        display: true,
-        text: 'Taux de transformation des offres en commandes',
+        display: false,
         font: {
-          size: 14,
+          size: isFocusMode ? 18 : 14,
           weight: 'bold' as const
         },
         color: '#156082',
         padding: {
-          top: 10,
-          bottom: 10
+          top: isFocusMode ? 15 : 5,
+          bottom: isFocusMode ? 15 : 5
         }
       },
       tooltip: {
+        titleFont: {
+          size: isFocusMode ? 16 : 12
+        },
+        bodyFont: {
+          size: isFocusMode ? 15 : 11,
+          weight: 'bold' as const
+        },
         callbacks: {
           label: (context: any) => {
             const label = context.dataset.label || '';
@@ -133,50 +175,41 @@ const ConversionRadarChart: React.FC<ConversionRadarChartProps> = ({ annee, comm
   };
 
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        Transformation des offres en commandes par année par commercial
-      </div>
-      <div style={chartStyle}>
+    <ChartFocusWrapper 
+      title="Transformation des offres en commandes par année par commercial"
+      onFocusChange={setIsFocusMode}
+    >
+      <div style={{
+        position: 'absolute',
+        top: 5,
+        left: 5,
+        right: 5,
+        bottom: 5,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
         {isLoading ? (
           <div style={loadingStyle}>
-            <span>Chargement des données...</span>
+            <span style={{ fontSize: isFocusMode ? '18px' : '14px' }}>Chargement des données...</span>
           </div>
         ) : error ? (
           <div style={errorStyle}>
-            <span>{error}</span>
+            <span style={{ fontSize: isFocusMode ? '18px' : '14px' }}>{error}</span>
           </div>
         ) : (
-          <Radar data={data} options={options} />
+          <div style={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            overflow: 'visible'
+          }}>
+            <Radar data={data} options={options} />
+          </div>
         )}
       </div>
-    </div>
+    </ChartFocusWrapper>
   );
-};
-
-const containerStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  border: '1px solid #156082',
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column'
-};
-
-const headerStyle: React.CSSProperties = {
-  backgroundColor: '#156082',
-  color: 'white',
-  padding: '10px 15px',
-  fontSize: '14px',
-  fontWeight: 'bold'
-};
-
-const chartStyle: React.CSSProperties = {
-  flex: 1,
-  padding: '15px',
-  position: 'relative',
-  minHeight: '300px'
 };
 
 const loadingStyle: React.CSSProperties = {

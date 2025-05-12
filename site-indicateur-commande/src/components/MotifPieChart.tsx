@@ -9,9 +9,11 @@ import {
 } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 import { getMotifRepartition, MotifRepartition } from '../services/api';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import ChartFocusWrapper from './ChartFocusWrapper';
 
 // S'assurer que ArcElement est enregistré pour les graphiques en camembert
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
 
 // Configuration des couleurs pour les motifs
 const MOTIF_COLORS = {
@@ -49,6 +51,7 @@ const MotifPieChart: React.FC<MotifPieChartProps> = ({ annee, commercial }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [motifData, setMotifData] = useState<MotifData[]>([]);
   const chartRef = useRef<ChartJS<'pie'>>(null);
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   // Fonction pour charger les données
   const loadData = async () => {
@@ -91,7 +94,7 @@ const MotifPieChart: React.FC<MotifPieChartProps> = ({ annee, commercial }) => {
   
   // Préparer les données pour le graphique
   const chartData: ChartData<'pie'> = {
-    labels: motifData.map(item => `${item.motif} ${item.percentage}%`),
+    labels: motifData.map(item => item.motif),
     datasets: [
       {
         data: motifData.map(item => item.count),
@@ -129,19 +132,45 @@ const MotifPieChart: React.FC<MotifPieChartProps> = ({ annee, commercial }) => {
           label: (context) => {
             const label = context.label || '';
             const value = context.parsed || 0;
-            return `${label}: ${value} devis`;
+            const index = context.dataIndex;
+            return `${label}: ${value} devis (${motifData[index].percentage}%)`;
           }
         }
-      }
+      },
+      datalabels: {
+        formatter: (value: number, ctx: any) => {
+          const index = ctx.dataIndex;
+          return `${motifData[index].percentage}%`;
+        },
+        color: '#fff',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        borderRadius: 4,
+        padding: 4,
+        font: {
+          weight: 'bold',
+          size: isFocusMode ? 16 : 13
+        },
+        textShadowBlur: 2,
+        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        textStrokeColor: '#000',
+        textStrokeWidth: 0.5,
+        align: 'center',
+        anchor: 'center',
+        offset: 0,
+        display: function(ctx: any) {
+          // N'afficher que si le segment est suffisamment large pour contenir l'étiquette
+          return ctx.dataset.data[ctx.dataIndex] / ctx.dataset.data.reduce((a: number, b: number) => a + b, 0) > 0.05;
+        }
+      } as any
     }
   };
   
   return (
-    <div style={chartContainerStyle}>
-      <div style={headerStyle}>
-        {`Répartition des motifs par année par commercial`}
-      </div>
-      <div style={chartStyle}>
+    <ChartFocusWrapper 
+      title="Répartition des motifs par année par commercial"
+      onFocusChange={setIsFocusMode}
+    >
+      <div style={chartContentStyle}>
         {isLoading ? (
           <div style={loadingStyle}>
             <span>Chargement des données...</span>
@@ -155,39 +184,19 @@ const MotifPieChart: React.FC<MotifPieChartProps> = ({ annee, commercial }) => {
             ref={chartRef}
             data={chartData}
             options={chartOptions}
+            plugins={[ChartDataLabels]}
           />
         )}
       </div>
-    </div>
+    </ChartFocusWrapper>
   );
 };
 
 // Styles
-const chartContainerStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  margin: '0',
-  padding: '0',
-  overflow: 'hidden',
-  border: '1px solid #156082',
+const chartContentStyle: React.CSSProperties = {
   height: '100%',
-  display: 'flex',
-  flexDirection: 'column'
-};
-
-const headerStyle: React.CSSProperties = {
-  backgroundColor: '#156082',
-  color: 'white',
-  padding: '10px 15px',
-  fontSize: '14px',
-  fontWeight: 'bold'
-};
-
-const chartStyle: React.CSSProperties = {
-  height: '300px',
+  width: '100%',
   padding: '15px',
-  flex: 1,
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',

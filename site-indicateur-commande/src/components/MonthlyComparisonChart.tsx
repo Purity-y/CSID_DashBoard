@@ -7,6 +7,7 @@ import {
 import { Chart } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { getCAParMois } from '../services/api';
+import ChartFocusWrapper from './ChartFocusWrapper';
 
 // Nous utilisons chartConfig.ts pour l'enregistrement global des composants Chart.js
 // Ici, nous n'avons pas besoin de réenregistrer les composants
@@ -139,7 +140,8 @@ const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({ annee, 
           value: item.ca,
           color: 'rgba(75, 192, 75, 0.8)',
           comparison: null,
-          label: `${formatCurrency(item.ca)}`
+          label: '0%',
+          labelColor: '#4CAF50'
         };
       } else {
         // Pour les autres mois, comparer avec le mois précédent
@@ -152,6 +154,12 @@ const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({ annee, 
           ? 'rgba(75, 192, 75, 0.8)' 
           : 'rgba(255, 99, 132, 0.8)';
         
+        // Couleurs pour les étiquettes
+        const labelColor = diffPercent >= 0 ? '#4CAF50' : '#F44336';
+        
+        // Utiliser des symboles plus/moins selon la direction
+        const symbol = diffPercent >= 0 ? '+' : '-';
+        
         return {
           month: getFrenchMonth(getMonthIndex(item.mois)),
           value: item.ca,
@@ -160,7 +168,8 @@ const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({ annee, 
             percent: Math.abs(diffPercent),
             increased: diffPercent >= 0
           },
-          label: `${formatCurrency(item.ca)} ${diffPercent >= 0 ? '↑' : '↓'}${Math.abs(diffPercent).toFixed(0)}%`
+          label: `${symbol} ${Math.abs(diffPercent).toFixed(0)}%`,
+          labelColor: labelColor
         };
       }
     });
@@ -200,13 +209,20 @@ const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({ annee, 
         display: true,
         align: 'end',
         anchor: 'end',
-        formatter: (_: any, context: any) => {
+        formatter: function(value: any, context: any) {
           return comparisonData[context.dataIndex].label;
         },
-        font: {
-          weight: 'bold'
+        color: function(context: any) {
+          // Utiliser la couleur spécifiée pour l'étiquette ou noir par défaut
+          return comparisonData[context.dataIndex].labelColor || 'black';
         },
-        color: '#333'
+        font: {
+          weight: 'bold',
+          size: 20 // Augmenter davantage la taille pour une meilleure visibilité
+        },
+        padding: {
+          top: 10
+        }
       } as any // Cast as any pour éviter les problèmes de type avec le plugin datalabels
     },
     scales: {
@@ -224,66 +240,45 @@ const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({ annee, 
     }
   };
 
+  // Rendu du graphique
+  const renderChart = () => {
+    if (isLoading) {
+      return (
+        <div style={loadingStyle}>
+          <span>Chargement des données...</span>
+        </div>
+      );
+    } 
+    
+    if (monthlyData.length === 0) {
+      return (
+        <div style={noDataStyle}>
+          <span>Aucune donnée disponible</span>
+        </div>
+      );
+    }
+    
+    return (
+      <Chart 
+        ref={chartRef}
+        type='bar' 
+        data={chartData} 
+        options={chartOptions}
+        plugins={[ChartDataLabels]}
+      />
+    );
+  };
+
   return (
-    <div style={chartContainerStyle}>
-      <div style={headerStyle}>
-        {`CA commandé par date par année par commercial`}
+    <ChartFocusWrapper title="CA commandé par date par année par commercial">
+      <div style={{ height: '100%', width: '100%' }}>
+        {renderChart()}
       </div>
-      <div style={chartStyle}>
-        {isLoading ? (
-          <div style={loadingStyle}>
-            <span>Chargement des données...</span>
-          </div>
-        ) : monthlyData.length === 0 ? (
-          <div style={noDataStyle}>
-            <span>Aucune donnée disponible</span>
-          </div>
-        ) : (
-          <Chart 
-            ref={chartRef}
-            type='bar' 
-            data={chartData} 
-            options={chartOptions}
-            plugins={[ChartDataLabels]}
-          />
-        )}
-      </div>
-    </div>
+    </ChartFocusWrapper>
   );
 };
 
 // Styles
-const chartContainerStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  margin: '0',
-  padding: '0',
-  overflow: 'hidden',
-  border: '1px solid #156082',
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column'
-};
-
-const headerStyle: React.CSSProperties = {
-  backgroundColor: '#156082',
-  color: 'white',
-  padding: '10px 15px',
-  fontSize: '14px',
-  fontWeight: 'bold'
-};
-
-const chartStyle: React.CSSProperties = {
-  height: '500px',
-  padding: '15px',
-  flex: 1,
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  position: 'relative'
-};
-
 const loadingStyle: React.CSSProperties = {
   position: 'absolute',
   top: 0,

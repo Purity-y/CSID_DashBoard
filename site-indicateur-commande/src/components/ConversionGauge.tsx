@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { getTauxConversion, TauxConversion } from '../services/api';
+import ChartFocusWrapper from './ChartFocusWrapper';
 
 interface ConversionGaugeProps {
   annee: number | null;
@@ -10,6 +11,7 @@ const ConversionGauge: React.FC<ConversionGaugeProps> = ({ annee, commercial }) 
   const [conversionData, setConversionData] = useState<TauxConversion[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
   const gaugeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,28 +68,48 @@ const ConversionGauge: React.FC<ConversionGaugeProps> = ({ annee, commercial }) 
   }
 
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        Taux de transformation des offres en commandes par année par commercial 
-      </div>
-      
-      <div style={gaugeContainerStyle}>
+    <ChartFocusWrapper 
+      title="Taux de transformation des offres en commandes par année par commercial"
+      onFocusChange={setIsFocusMode}
+    >
+      <div style={gaugeWrapperStyle}>
         {/* Étiquettes */}
         <div style={labelsContainerStyle}>
-          <div style={labelStyle}>Low</div>
-          <div style={labelStyle}>Medium</div>
-          <div style={labelStyle}>High</div>
+          <div style={{
+            ...labelStyle,
+            fontSize: isFocusMode ? '18px' : '14px'
+          }}>Low</div>
+          <div style={{
+            ...labelStyle,
+            fontSize: isFocusMode ? '18px' : '14px'
+          }}>Medium</div>
+          <div style={{
+            ...labelStyle,
+            fontSize: isFocusMode ? '18px' : '14px'
+          }}>High</div>
         </div>
         
         {/* Jauge avec dégradé */}
-        <div style={gaugeStyle} ref={gaugeRef}>
+        <div style={{
+          ...gaugeStyle,
+          height: isFocusMode ? '35px' : '25px'
+        }} ref={gaugeRef}>
           {/* Flèche indicatrice */}
           <div style={{
             ...needleStyle,
             left: `${needlePosition}%`
           }}>
-            <div style={needleTriangleStyle}></div>
-            <div style={needleLineStyle}></div>
+            <div style={{
+              ...needleTriangleStyle,
+              borderLeft: isFocusMode ? '10px solid transparent' : '8px solid transparent',
+              borderRight: isFocusMode ? '10px solid transparent' : '8px solid transparent',
+              borderTop: isFocusMode ? '15px solid black' : '12px solid black'
+            }}></div>
+            <div style={{
+              ...needleLineStyle,
+              height: isFocusMode ? '45px' : '35px',
+              width: isFocusMode ? '3px' : '2px'
+            }}></div>
           </div>
         </div>
         
@@ -95,50 +117,53 @@ const ConversionGauge: React.FC<ConversionGaugeProps> = ({ annee, commercial }) 
         <div style={statsContainerStyle}>
           <div style={statsRowStyle}>
             <div style={statItemStyle}>
-              <span style={statLabelStyle}>Devis:</span> 
-              <span style={statValueStyle}>{totalDevis}</span>
+              <span style={{
+                ...statLabelStyle,
+                fontWeight: 'bold',
+                fontSize: isFocusMode ? '18px' : '14px'
+              }}>Devis:</span> 
+              <span style={{
+                ...statValueStyle,
+                fontSize: isFocusMode ? '18px' : '14px'
+              }}>{totalDevis}</span>
             </div>
             <div style={statItemStyle}>
-              <span style={statLabelStyle}>Commandes:</span> 
-              <span style={statValueStyle}>{totalCommandes}</span>
+              <span style={{
+                ...statLabelStyle,
+                fontWeight: 'bold',
+                fontSize: isFocusMode ? '18px' : '14px'
+              }}>Commandes:</span> 
+              <span style={{
+                ...statValueStyle,
+                fontSize: isFocusMode ? '18px' : '14px'
+              }}>{totalCommandes}</span>
             </div>
           </div>
           <div style={statsRowStyle}>
             <div style={statItemStyle}>
-              <span style={statLabelStyle}>Taux de transformation:</span> 
-              <span style={statValueStyle}>{tauxConversion.toFixed(1)}%</span>
+              <span style={{
+                ...statLabelStyle,
+                fontWeight: 'bold',
+                fontSize: isFocusMode ? '18px' : '14px'
+              }}>Taux de transformation:</span> 
+              <span style={{
+                ...statValueStyle,
+                fontSize: isFocusMode ? '20px' : '16px'
+              }}>{tauxConversion.toFixed(1)}%</span>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </ChartFocusWrapper>
   );
 };
 
 // Styles
-const containerStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  overflow: 'hidden',
-  border: '1px solid #156082',
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column'
-};
-
-const headerStyle: React.CSSProperties = {
-  fontSize: '14px',
-  fontWeight: 'bold',
-  color: 'white',
-  backgroundColor: '#156082',
-  padding: '10px 15px'
-};
-
-const gaugeContainerStyle: React.CSSProperties = {
+const gaugeWrapperStyle: React.CSSProperties = {
   padding: '20px 15px 30px',
   position: 'relative',
-  flexGrow: 1,
+  height: '100%',
+  width: '100%',
   display: 'flex',
   flexDirection: 'column'
 };
